@@ -34,20 +34,30 @@ html, body {
 
 .app-header {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 98, 0, 0.15);
+  width: 100%;
 }
 .app-header h1 {
   margin: 0;
   font-size: 2.4rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: var(--white);
-  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: var(--orange);
 }
 .tagline {
-  color: rgba(255,255,255,0.85);
-  margin: 4px 0 0;
+  color: var(--muted);
+  margin: 6px 0 0;
   font-size: 0.95rem;
+}
+
+.app-header--compact {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+}
+.app-header--compact h1 {
+  font-size: 1.6rem;
 }
 
 .screen {

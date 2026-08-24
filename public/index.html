@@ -8,13 +8,13 @@
 </head>
 <body>
   <main id="app">
-    <header class="app-header">
-      <h1>create-me</h1>
-      <p class="tagline">Snap a photo, describe your look, get an AI-generated portrait.</p>
-    </header>
 
     <!-- Screen 1: Camera -->
     <section id="screen-camera" class="screen active">
+      <header class="app-header">
+        <h1>create-me</h1>
+        <p class="tagline">Snap a photo, describe your look, get an AI-generated portrait.</p>
+      </header>
       <div class="video-wrap">
         <video id="video" autoplay playsinline muted></video>
       </div>
@@ -26,6 +26,9 @@
 
     <!-- Screen 2: Review photo + prompt -->
     <section id="screen-prompt" class="screen">
+      <header class="app-header app-header--compact">
+        <h1>create-me</h1>
+      </header>
       <div class="preview-wrap">
         <img id="captured-photo" alt="Captured photo" />
       </div>
@@ -47,12 +50,18 @@
 
     <!-- Screen 3: Loading -->
     <section id="screen-loading" class="screen">
+      <header class="app-header app-header--compact">
+        <h1>create-me</h1>
+      </header>
       <div class="spinner" aria-label="Generating"></div>
       <p>Generating your image&hellip; this can take up to 15 seconds.</p>
     </section>
 
     <!-- Screen 4: Result -->
     <section id="screen-result" class="screen">
+      <header class="app-header app-header--compact">
+        <h1>create-me</h1>
+      </header>
       <div class="preview-wrap print-target">
         <img id="result-photo" alt="Generated photo" />
       </div>
@@ -65,6 +74,9 @@
 
     <!-- Screen 5: Error -->
     <section id="screen-error" class="screen">
+      <header class="app-header app-header--compact">
+        <h1>create-me</h1>
+      </header>
       <p class="error-text" id="fatal-error-text">Something went wrong.</p>
       <div class="controls">
         <button id="btn-error-retry" class="btn btn-primary">Try Again</button>
