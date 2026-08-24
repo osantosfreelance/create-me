@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>create-me — Photo Booth</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main id="app">
+    <header class="app-header">
+      <h1>create-me</h1>
+      <p class="tagline">Snap a photo, describe your look, get an AI-generated portrait.</p>
+    </header>
+
+    <!-- Screen 1: Camera -->
+    <section id="screen-camera" class="screen active">
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+      </div>
+      <div class="controls">
+        <button id="btn-take-photo" class="btn btn-primary">Take Photo</button>
+      </div>
+      <p id="camera-error" class="error-text" hidden></p>
+    </section>
+
+    <!-- Screen 2: Review photo + prompt -->
+    <section id="screen-prompt" class="screen">
+      <div class="preview-wrap">
+        <img id="captured-photo" alt="Captured photo" />
+      </div>
+      <label for="prompt-input">Describe how you want your image to look (optional):</label>
+      <textarea id="prompt-input" maxlength="500"
+        placeholder="e.g. Make me a man with a long beard, steampunk background"></textarea>
+      <p id="prompt-hint" class="hint-text">Leave blank to keep your original photo, or describe the desired look only. <span id="prompt-count">0</span>/500</p>
+      <div class="controls">
+        <button id="btn-retake" class="btn btn-secondary">Retake</button>
+        <button id="btn-generate" class="btn btn-primary">Generate</button>
+      </div>
+      <p id="prompt-error" class="error-text" hidden></p>
+    </section>
+
+    <!-- Screen 3: Loading -->
+    <section id="screen-loading" class="screen">
+      <div class="spinner" aria-label="Generating"></div>
+      <p>Generating your image&hellip; this can take up to 15 seconds.</p>
+    </section>
+
+    <!-- Screen 4: Result -->
+    <section id="screen-result" class="screen">
+      <div class="preview-wrap print-target">
+        <img id="result-photo" alt="Generated photo" />
+      </div>
+      <div class="controls">
+        <button id="btn-start-over" class="btn btn-secondary">Start Over</button>
+        <button id="btn-download" class="btn btn-secondary">Download</button>
+        <button id="btn-print" class="btn btn-primary">Print</button>
+      </div>
+    </section>
+
+    <!-- Screen 5: Error -->
+    <section id="screen-error" class="screen">
+      <p class="error-text" id="fatal-error-text">Something went wrong.</p>
+      <div class="controls">
+        <button id="btn-error-retry" class="btn btn-primary">Try Again</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

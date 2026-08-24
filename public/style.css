@@ -1,0 +1,175 @@
+:root {
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --accent: #ff6200;
+  --accent-dark: #e45700;
+  --brand-blue: #003082;
+  --brand-blue-dark: #00245f;
+  --text: #10224d;
+  --muted: #4c5d84;
+  --border: #d7dfef;
+  --surface: #edf2fb;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(255, 98, 0, 0.14), transparent 42%),
+    radial-gradient(circle at bottom left, rgba(0, 48, 130, 0.1), transparent 45%),
+    var(--bg);
+  color: var(--text);
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 48px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 2.2rem;
+  letter-spacing: 1px;
+  color: var(--brand-blue);
+}
+.tagline {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 720px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 14px 34px rgba(0, 48, 130, 0.14);
+}
+.screen.active { display: flex; }
+
+.video-wrap, .preview-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0b1f4a;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+video, .preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  font-size: 1.05rem;
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+
+.btn-secondary {
+  background: var(--brand-blue);
+  color: #fff;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--brand-blue-dark); }
+
+label {
+  align-self: flex-start;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+textarea {
+  width: 100%;
+  min-height: 90px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 12px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  resize: vertical;
+}
+
+.error-text {
+  color: #b3261e;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.hint-text {
+  color: var(--muted);
+  font-size: 0.85rem;
+  align-self: flex-end;
+  margin: -12px 0 16px;
+}
+.hint-text.over-limit {
+  color: #b3261e;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 6px solid var(--surface);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Kiosk-friendly: print only the generated result image, nothing else */
+@media print {
+  body * { visibility: hidden; }
+  .print-target, .print-target * { visibility: visible; }
+  .print-target {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+}
