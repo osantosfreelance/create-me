@@ -35,8 +35,6 @@ html, body {
 .app-header {
   text-align: center;
   margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid rgba(255, 98, 0, 0.15);
   width: 100%;
 }
 .app-header h1 {
