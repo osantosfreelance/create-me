@@ -13,6 +13,9 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { generateImage } = require('./gemini');
@@ -149,6 +152,32 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, configured: Boolean(process.env.GEMINI_API_KEY) });
 });
 
-app.listen(PORT, () => {
-  console.log(`create-me listening on http://localhost:${PORT}`);
+const certPath = path.join(__dirname, 'cert.pem');
+const keyPath = path.join(__dirname, 'key.pem');
+const hasTlsCerts = fs.existsSync(certPath) && fs.existsSync(keyPath);
+const isDocker = fs.existsSync('/.dockerenv') || process.env.container === 'docker';
+const protocol = hasTlsCerts ? 'https' : 'http';
+
+const server = hasTlsCerts
+  ? https.createServer(
+      {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+      },
+      app
+    )
+  : http.createServer(app);
+
+server.listen(PORT, () => {
+  const hostIp = (process.env.HOST_IP || '').trim();
+  const localUrl = `${protocol}://localhost:${PORT}`;
+  console.log(`create-me listening on ${localUrl}`);
+
+  if (isDocker) {
+    if (hostIp) {
+      console.log(`Network: ${protocol}://${hostIp}:${PORT}`);
+    } else {
+      console.log('Set HOST_IP in .env to see your LAN URL here');
+    }
+  }
 });
