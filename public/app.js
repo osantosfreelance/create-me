@@ -27,6 +27,7 @@
   const promptHint = document.getElementById('prompt-hint');
   const btnRetake = document.getElementById('btn-retake');
   const btnGenerate = document.getElementById('btn-generate');
+  const btnMic = document.getElementById('btn-mic');
 
   const resultPhoto = document.getElementById('result-photo');
   const btnStartOver = document.getElementById('btn-start-over');
@@ -41,6 +42,58 @@
   let capturedImageDataUrl = null;
   let resultImageDataUrl = null;
   let generationInFlight = false;
+
+  // Speech-to-text
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isListening = false;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || 'en-US';
+
+    recognition.addEventListener('result', (e) => {
+      let interim = '';
+      let final = '';
+      for (const result of e.results) {
+        if (result.isFinal) final += result[0].transcript;
+        else interim += result[0].transcript;
+      }
+      const base = promptInput.dataset.speechBase || '';
+      promptInput.value = base + (final || interim);
+      if (final) promptInput.dataset.speechBase = base + final;
+      updatePromptCount();
+    });
+
+    recognition.addEventListener('end', () => {
+      isListening = false;
+      btnMic.classList.remove('btn-mic--recording');
+      btnMic.setAttribute('aria-label', 'Speak your prompt');
+      delete promptInput.dataset.speechBase;
+    });
+
+    recognition.addEventListener('error', () => {
+      isListening = false;
+      btnMic.classList.remove('btn-mic--recording');
+      delete promptInput.dataset.speechBase;
+    });
+
+    btnMic.hidden = false;
+
+    btnMic.addEventListener('click', () => {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        promptInput.dataset.speechBase = promptInput.value;
+        recognition.start();
+        isListening = true;
+        btnMic.classList.add('btn-mic--recording');
+        btnMic.setAttribute('aria-label', 'Stop recording');
+      }
+    });
+  }
 
   const IDLE_TIMEOUT_MS = 90 * 1000; // reset to camera after 90s of inactivity
   let idleTimer = null;
@@ -229,6 +282,10 @@
     capturedPhoto.src = '';
     resultPhoto.src = '';
     promptInput.value = '';
+    delete promptInput.dataset.speechBase;
+    if (recognition && isListening) {
+      recognition.stop();
+    }
     updatePromptCount();
     showScreen('camera');
     if (!mediaStream) startCamera();
