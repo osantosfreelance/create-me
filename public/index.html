@@ -30,8 +30,13 @@
         <img id="captured-photo" alt="Captured photo" />
       </div>
       <label for="prompt-input">Describe how you want your image to look (optional):</label>
-      <textarea id="prompt-input" maxlength="500"
-        placeholder="e.g. Make me a man with a long beard, steampunk background"></textarea>
+      <div class="prompt-input-wrap">
+        <textarea id="prompt-input" maxlength="500"
+          placeholder="e.g. Make me a man with a long beard, steampunk background"></textarea>
+        <button id="btn-mic" class="btn btn-mic" aria-label="Speak your prompt" title="Speak your prompt" hidden>
+          🎤
+        </button>
+      </div>
       <p id="prompt-hint" class="hint-text">Leave blank to keep your original photo, or describe the desired look only. <span id="prompt-count">0</span>/500</p>
       <div class="controls">
         <button id="btn-retake" class="btn btn-secondary">Retake</button>
