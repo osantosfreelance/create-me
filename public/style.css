@@ -38,7 +38,8 @@ html, body {
   margin: 0;
   font-size: 2.4rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.55em;
+  text-indent: 0.55em;
   color: var(--orange);
 }
 .tagline {
@@ -52,7 +53,9 @@ html, body {
   padding-bottom: 12px;
 }
 .app-header--compact h1 {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.45em;
+  text-indent: 0.45em;
 }
 
 .screen {
