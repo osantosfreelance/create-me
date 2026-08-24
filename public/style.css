@@ -1,27 +1,23 @@
 :root {
-  --bg: #f6f8fc;
-  --card: #ffffff;
-  --accent: #ff6200;
-  --accent-dark: #e45700;
-  --brand-blue: #003082;
-  --brand-blue-dark: #00245f;
-  --text: #10224d;
-  --muted: #4c5d84;
-  --border: #d7dfef;
-  --surface: #edf2fb;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --orange: #ff6200;
+  --orange-dark: #e45700;
+  --navy: #1a1a8c;
+  --navy-dark: #12127a;
+  --white: #ffffff;
+  --off-white: #f5f5f5;
+  --muted: #5a5aaa;
+  --border: rgba(26, 26, 140, 0.15);
+  --surface: #eeeef8;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   height: 100%;
   margin: 0;
-  background:
-    radial-gradient(circle at top right, rgba(255, 98, 0, 0.14), transparent 42%),
-    radial-gradient(circle at bottom left, rgba(0, 48, 130, 0.1), transparent 45%),
-    var(--bg);
-  color: var(--text);
+  background: var(--orange);
+  color: var(--navy);
 }
 
 #app {
@@ -29,7 +25,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 16px 48px;
+  padding: 24px 16px 16px;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(26,26,140,0.18), transparent 50%),
+    var(--orange);
 }
 
 .app-header {
@@ -38,13 +38,16 @@ html, body {
 }
 .app-header h1 {
   margin: 0;
-  font-size: 2.2rem;
+  font-size: 2.4rem;
+  font-weight: 800;
   letter-spacing: 1px;
-  color: var(--brand-blue);
+  color: var(--white);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .tagline {
-  color: var(--muted);
+  color: rgba(255,255,255,0.85);
   margin: 4px 0 0;
+  font-size: 0.95rem;
 }
 
 .screen {
@@ -53,24 +56,25 @@ html, body {
   align-items: center;
   width: 100%;
   max-width: 720px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 14px 34px rgba(0, 48, 130, 0.14);
+  background: var(--white);
+  border: none;
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 20px 60px rgba(26,26,140,0.22), 0 2px 8px rgba(0,0,0,0.1);
 }
 .screen.active { display: flex; }
 
 .video-wrap, .preview-wrap {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #0b1f4a;
+  background: var(--navy);
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
+  border: 3px solid var(--orange);
 }
 
 video, .preview-wrap img {
@@ -93,28 +97,35 @@ video, .preview-wrap img {
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.1s ease, opacity 0.2s ease;
+  font-weight: 700;
+  transition: transform 0.1s ease, opacity 0.2s ease, background 0.15s ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--orange);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(255,98,0,0.4);
 }
-.btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+.btn-primary:hover:not(:disabled) {
+  background: var(--orange-dark);
+  box-shadow: 0 4px 18px rgba(255,98,0,0.55);
+}
 
 .btn-secondary {
-  background: var(--brand-blue);
-  color: #fff;
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(26,26,140,0.25);
 }
-.btn-secondary:hover:not(:disabled) { background: var(--brand-blue-dark); }
+.btn-secondary:hover:not(:disabled) { background: var(--navy-dark); }
 
 label {
   align-self: flex-start;
   margin-bottom: 8px;
-  color: var(--muted);
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.88rem;
 }
 
 .prompt-input-wrap {
@@ -126,7 +137,7 @@ label {
 .prompt-input-wrap textarea {
   width: 100%;
   margin-bottom: 0;
-  padding-right: 60px; /* room for the mic button */
+  padding-right: 60px;
 }
 
 .btn-mic {
@@ -138,14 +149,15 @@ label {
   padding: 0;
   border-radius: 50%;
   font-size: 1.2rem;
-  background: var(--brand-blue);
-  color: #fff;
+  background: var(--orange);
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(255,98,0,0.4);
 }
 .btn-mic:active { transform: scale(0.93); }
 .btn-mic--recording {
@@ -154,26 +166,30 @@ label {
 }
 
 @keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); }
-  50%       { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(192,57,43,0); }
 }
 
 textarea {
   width: 100%;
   min-height: 90px;
   border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--text);
+  border: 2px solid var(--border);
+  background: var(--off-white);
+  color: var(--navy);
   padding: 12px;
   font-size: 1rem;
   resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
 }
+textarea:focus { border-color: var(--orange); }
 
 .error-text {
-  color: #b3261e;
+  color: #c0392b;
   margin-top: 12px;
   text-align: center;
+  font-weight: 600;
 }
 
 .hint-text {
@@ -182,25 +198,27 @@ textarea {
   align-self: flex-end;
   margin: -12px 0 16px;
 }
-.hint-text.over-limit {
-  color: #b3261e;
-}
+.hint-text.over-limit { color: #c0392b; }
 
 .spinner {
   width: 56px;
   height: 56px;
   border-radius: 50%;
   border: 6px solid var(--surface);
-  border-top-color: var(--accent);
+  border-top-color: var(--orange);
   animation: spin 0.9s linear infinite;
   margin-bottom: 20px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.app-footer {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.78rem;
+  padding: 16px 0 8px;
+  text-align: center;
 }
 
-/* Kiosk-friendly: print only the generated result image, nothing else */
 @media print {
   body * { visibility: hidden; }
   .print-target, .print-target * { visibility: visible; }
