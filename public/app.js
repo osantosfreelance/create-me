@@ -260,18 +260,92 @@
     }
   }
 
-  function downloadResult() {
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+  }
+
+  const watermarkImagePromise = loadImage('/watermark.png').catch((err) => {
+    console.warn('Watermark could not be preloaded; print/download will skip it.', err);
+    return null;
+  });
+
+  function getWatermarkScale(canvas) {
+    return Math.min(canvas.width, canvas.height) * 0.18;
+  }
+
+  function getWatermarkPadding(canvas) {
+    return Math.min(canvas.width, canvas.height) * 0.02;
+  }
+
+  async function composeWithWatermark(dataUrl) {
+    if (!dataUrl) return null;
+    const baseImg = await loadImage(dataUrl);
+    const wm = await watermarkImagePromise;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = baseImg.naturalWidth || baseImg.width;
+    canvas.height = baseImg.naturalHeight || baseImg.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+
+    if (wm) {
+      const wmW = Math.round(getWatermarkScale(canvas));
+      const wmH = Math.round(wmW * (wm.naturalHeight / wm.naturalWidth));
+      const pad = Math.round(getWatermarkPadding(canvas));
+      ctx.drawImage(wm, canvas.width - wmW - pad, canvas.height - wmH - pad, wmW, wmH);
+    }
+
+    return canvas.toDataURL('image/png');
+  }
+
+  async function downloadResult() {
     if (!resultImageDataUrl) return;
+    const composed = await composeWithWatermark(resultImageDataUrl);
     const a = document.createElement('a');
-    a.href = resultImageDataUrl;
+    a.href = composed || resultImageDataUrl;
     a.download = `create-me-${Date.now()}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
   }
 
-  function printResult() {
-    window.print();
+  async function printResult() {
+    if (!resultImageDataUrl) return;
+    const composed = await composeWithWatermark(resultImageDataUrl);
+    if (!composed) {
+      window.print();
+      return;
+    }
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) {
+      window.print();
+      return;
+    }
+    win.document.open();
+    win.document.write(`<!doctype html><html><head><title>Print</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; }
+  img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  @media print { html, body { margin: 0; } }
+</style>
+</head><body>
+<img id="print-img" src="${composed}" alt="Print">
+<script>
+  (function () {
+    var img = document.getElementById('print-img');
+    function go() { window.focus(); window.print(); }
+    if (img.complete && img.naturalWidth) { go(); }
+    else { img.addEventListener('load', go, { once: true }); }
+    window.addEventListener('afterprint', function () { window.close(); });
+  })();
+</script>
+</body></html>`);
+    win.document.close();
   }
 
   function startOver() {
