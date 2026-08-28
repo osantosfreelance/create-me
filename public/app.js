@@ -9,12 +9,19 @@
 
 (() => {
   const screens = {
+    sessionCode: document.getElementById('screen-session-code'),
     camera: document.getElementById('screen-camera'),
     prompt: document.getElementById('screen-prompt'),
     loading: document.getElementById('screen-loading'),
     result: document.getElementById('screen-result'),
     error: document.getElementById('screen-error'),
   };
+
+  const sessionCodeInput = document.getElementById('session-code-input');
+  const btnSessionCodeSubmit = document.getElementById('btn-session-code-submit');
+  const sessionCodeError = document.getElementById('session-code-error');
+
+  let currentSessionCode = null;
 
   const video = document.getElementById('video');
   const cameraError = document.getElementById('camera-error');
@@ -137,6 +144,56 @@
     screens[name].classList.add('active');
   }
 
+  async function submitSessionCode() {
+    const code = sessionCodeInput.value.trim();
+    if (!code) {
+      sessionCodeError.textContent = 'Session code is required.';
+      sessionCodeError.hidden = false;
+      return;
+    }
+
+    // Validate the session code before allowing access to camera
+    btnSessionCodeSubmit.disabled = true;
+    sessionCodeError.hidden = true;
+
+    try {
+      const res = await fetch('/api/validate-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Code': code,
+        },
+        body: JSON.stringify({ sessionCode: code }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        sessionCodeError.textContent = data.error || 'Invalid or missing session code.';
+        sessionCodeError.hidden = false;
+        sessionCodeInput.value = '';
+        btnSessionCodeSubmit.disabled = false;
+        return;
+      }
+
+      // Valid session code — proceed to camera
+      currentSessionCode = code;
+      sessionCodeError.hidden = true;
+      sessionCodeInput.value = '';
+      showScreen('camera');
+    } catch (err) {
+      sessionCodeError.textContent = 'Could not verify session code. Please try again.';
+      sessionCodeError.hidden = false;
+      sessionCodeInput.value = '';
+      btnSessionCodeSubmit.disabled = false;
+    }
+  }
+
+  sessionCodeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') submitSessionCode();
+  });
+  btnSessionCodeSubmit.addEventListener('click', submitSessionCode);
+
   function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
@@ -209,6 +266,12 @@
   async function generate() {
     if (generationInFlight) return;
 
+    if (!currentSessionCode) {
+      promptError.textContent = 'Session code is required. Please go back and enter it.';
+      promptError.hidden = false;
+      return;
+    }
+
     const prompt = promptInput.value.trim();
 
     // If no prompt is provided, skip the paid AI call and proceed directly.
@@ -240,8 +303,9 @@
         headers: {
           'Content-Type': 'application/json',
           'X-Client-Request-Id': clientRequestId,
+          'X-Session-Code': currentSessionCode || '',
         },
-        body: JSON.stringify({ imageBase64: base64, mimeType, prompt }),
+        body: JSON.stringify({ imageBase64: base64, mimeType, prompt, sessionCode: currentSessionCode }),
       });
       const data = await res.json();
 

@@ -99,7 +99,29 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-app.post('/api/generate', generateLimiter, async (req, res) => {
+// Session code validation. If SESSION_CODE is set, enforce it on protected endpoints.
+const VALID_SESSION = process.env.SESSION_CODE || 'create-me-townhall-2k26';
+
+function sessionCodeMiddleware(req, res, next) {
+  const sessionCode = req.get('x-session-code') || (req.body && req.body.sessionCode);
+  if (sessionCode !== VALID_SESSION) {
+    console.warn(`[${req.requestId}] session-code validation failed: received "${sessionCode || 'none'}"`);
+    return res.status(401).json({ error: 'Invalid or missing session code.' });
+  }
+  next();
+}
+
+// Validation endpoint for early feedback on session code
+app.post('/api/validate-session', (req, res) => {
+  const sessionCode = req.get('x-session-code') || (req.body && req.body.sessionCode);
+  if (sessionCode !== VALID_SESSION) {
+    console.warn(`[${req.requestId}] session-code validation failed: received "${sessionCode || 'none'}"`);
+    return res.status(401).json({ error: 'Invalid or missing session code.' });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/generate', generateLimiter, sessionCodeMiddleware, async (req, res) => {
   const opStart = Date.now();
   try {
     const { imageBase64, mimeType, prompt } = req.body || {};

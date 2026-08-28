@@ -10,8 +10,21 @@
 <body>
   <main id="app">
 
+    <!-- Screen 0: Session Code Login -->
+    <section id="screen-session-code" class="screen active">
+      <header class="app-header">
+        <h1>CREATE ME</h1>
+        <p class="tagline">Enter your session code to begin.</p>
+      </header>
+      <div class="session-code-form">
+        <input id="session-code-input" type="password" placeholder="Session Code" maxlength="100" />
+        <button id="btn-session-code-submit" class="btn btn-primary">Enter</button>
+      </div>
+      <p id="session-code-error" class="error-text" hidden></p>
+    </section>
+
     <!-- Screen 1: Camera -->
-    <section id="screen-camera" class="screen active">
+    <section id="screen-camera" class="screen">
       <header class="app-header">
         <h1>CREATE ME</h1>
         <p class="tagline">Snap a photo, describe your look, get an AI-generated portrait.</p>
