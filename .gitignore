@@ -7,7 +7,6 @@ Thumbs.db
 .gcloudignore
 cloudbuild.yaml
 DEPLOY.md
-Dockerfile.cloudrun
 ING.README.md
 scripts/deploy-gcp.ps1
 scripts/deploy-gcp-local.ps1
