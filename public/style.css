@@ -70,22 +70,50 @@ html, body {
 
 .video-wrap, .preview-wrap {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1;
   background: var(--navy);
-  border-radius: 12px;
   overflow: hidden;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  border: 3px solid var(--orange);
+  border: none;
 }
 
-video, .preview-wrap img {
+video, #captured-photo, #result-photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  /* Zoom out so the subject has margin before the photo-frame's border,
+     instead of running edge-to-edge and getting cut off/overlapped by it
+     (most noticeable on full-body shots). Keep in sync with the
+     PHOTO_ZOOM_OUT_SCALE constant in app.js used for exported images. */
+  transform: scale(0.72);
+}
+
+.photo-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.preview-watermark {
+  position: absolute;
+  right: 2%;
+  bottom: 2%;
+  z-index: 2;
+  width: 18%;
+  height: auto;
+  pointer-events: none;
+}
+
+#print-photo {
+  display: none;
 }
 
 .controls {
@@ -249,18 +277,27 @@ textarea:focus { border-color: var(--orange); }
 }
 
 @media print {
-  body * { visibility: hidden; }
-  .print-target, .print-target * { visibility: visible; }
+  @page { margin: 0; }
+  html, body { margin: 0; padding: 0; height: auto; background: #fff; }
+  body > *:not(#app) { display: none; }
+  #app > *:not(#screen-result) { display: none; }
+  #app { min-height: 0; padding: 0; }
+  #screen-result { display: block; width: 100%; max-width: none; padding: 0; box-shadow: none; }
+  #screen-result > *:not(.print-target) { display: none; }
   .print-target {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
+    position: static;
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: auto;
     margin: 0;
     border-radius: 0;
     border: none;
   }
-  .print-target img {
+  .print-target > :not(#print-photo) {
+    display: none;
+  }
+  #print-photo {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;

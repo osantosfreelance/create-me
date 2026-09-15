@@ -31,6 +31,7 @@
       </header>
       <div class="video-wrap">
         <video id="video" autoplay playsinline muted></video>
+        <img class="photo-frame" src="/photo-frame.png" alt="" />
       </div>
       <div class="controls">
         <button id="btn-take-photo" class="btn btn-primary">Take Photo</button>
@@ -45,6 +46,7 @@
       </header>
       <div class="preview-wrap">
         <img id="captured-photo" alt="Captured photo" />
+        <img class="photo-frame" src="/photo-frame.png" alt="" />
       </div>
       <label for="prompt-input">Describe how you want your image to look (optional):</label>
       <div class="prompt-input-wrap">
@@ -78,6 +80,9 @@
       </header>
       <div class="preview-wrap print-target">
         <img id="result-photo" alt="Generated photo" />
+        <img class="photo-frame" src="/photo-frame.png" alt="" />
+        <img class="preview-watermark" src="/watermark.png" alt="" />
+        <img id="print-photo" alt="" />
       </div>
       <div class="controls">
         <button id="btn-start-over" class="btn btn-secondary">Start Over</button>
