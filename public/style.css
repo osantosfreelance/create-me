@@ -82,15 +82,20 @@ html, body {
 }
 
 video, #captured-photo, #result-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
   /* Zoom out so the subject has margin before the photo-frame's border,
      instead of running edge-to-edge and getting cut off/overlapped by it
-     (most noticeable on full-body shots). Keep in sync with the
-     PHOTO_ZOOM_OUT_SCALE constant in app.js used for exported images. */
-  transform: scale(0.72);
+     (most noticeable on full-body shots). The frame's transparent window
+     isn't vertically centered in the square (it sits lower), so instead of
+     a symmetric transform: scale() we size the element smaller and shift
+     it down with margin-top — this container is always square, so a %
+     margin-top (based on width) equals the same fraction of height.
+     Keep these two values in sync with PHOTO_ZOOM_SCALE / PHOTO_ZOOM_MARGIN_TOP
+     in app.js used for exported/printed images. */
+  width: 75%;
+  height: 75%;
+  margin-top: 6%;
+  object-fit: cover;
+  display: block;
 }
 
 .photo-frame {

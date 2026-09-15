@@ -363,9 +363,13 @@
 
   // Zoom the subject out within the frame so it doesn't run edge-to-edge and
   // get cut off/overlapped by the photo-frame's decorative border — most
-  // noticeable on full-body shots. Keep in sync with the `transform: scale(...)`
-  // applied to video/#captured-photo/#result-photo in style.css.
-  const PHOTO_ZOOM_OUT_SCALE = 0.72;
+  // noticeable on full-body shots. The frame's transparent window sits lower
+  // than vertical-center, so the subject is shifted down (extra margin-top)
+  // rather than centered symmetrically. Keep these two values in sync with
+  // the `width/height` and `margin-top` applied to
+  // video/#captured-photo/#result-photo in style.css.
+  const PHOTO_ZOOM_SCALE = 0.75;
+  const PHOTO_ZOOM_MARGIN_TOP = 0.06;
 
   async function composeFinalImage(dataUrl) {
     if (!dataUrl) return null;
@@ -387,9 +391,10 @@
     ctx.fillStyle = '#1a1a8c';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const drawSize = Math.round(cropSize * PHOTO_ZOOM_OUT_SCALE);
-    const drawOffset = Math.round((cropSize - drawSize) / 2);
-    ctx.drawImage(baseImg, cropX, cropY, cropSize, cropSize, drawOffset, drawOffset, drawSize, drawSize);
+    const drawSize = Math.round(cropSize * PHOTO_ZOOM_SCALE);
+    const drawOffsetX = Math.round((cropSize - drawSize) / 2);
+    const drawOffsetY = Math.round((cropSize - drawSize) / 2 + cropSize * PHOTO_ZOOM_MARGIN_TOP);
+    ctx.drawImage(baseImg, cropX, cropY, cropSize, cropSize, drawOffsetX, drawOffsetY, drawSize, drawSize);
 
     if (frame) {
       ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
