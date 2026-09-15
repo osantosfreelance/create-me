@@ -37,6 +37,7 @@
   const btnMic = document.getElementById('btn-mic');
 
   const resultPhoto = document.getElementById('result-photo');
+  const printPhoto = document.getElementById('print-photo');
   const btnStartOver = document.getElementById('btn-start-over');
   const btnDownload = document.getElementById('btn-download');
   const btnPrint = document.getElementById('btn-print');
@@ -48,6 +49,7 @@
   // In-memory only — never persisted to disk/localStorage.
   let capturedImageDataUrl = null;
   let resultImageDataUrl = null;
+  let composedResultImageDataUrl = null;
   let generationInFlight = false;
 
   // Speech-to-text
@@ -232,10 +234,15 @@
 
   function takePhoto() {
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 960;
+    const videoWidth = video.videoWidth || 1280;
+    const videoHeight = video.videoHeight || 960;
+    const cropSize = Math.min(videoWidth, videoHeight);
+    const cropX = Math.round((videoWidth - cropSize) / 2);
+    const cropY = Math.round((videoHeight - cropSize) / 2);
+    canvas.width = cropSize;
+    canvas.height = cropSize;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
     capturedImageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
     capturedPhoto.src = capturedImageDataUrl;
     promptInput.value = '';
@@ -278,8 +285,10 @@
     if (!prompt) {
       promptError.hidden = true;
       resultImageDataUrl = capturedImageDataUrl;
+      composedResultImageDataUrl = null;
       resultPhoto.src = resultImageDataUrl;
       showScreen('result');
+      prewarmComposedResultImage();
       return;
     }
 
@@ -314,8 +323,10 @@
       }
 
       resultImageDataUrl = `data:${data.mimeType};base64,${data.imageBase64}`;
+      composedResultImageDataUrl = null;
       resultPhoto.src = resultImageDataUrl;
       showScreen('result');
+      prewarmComposedResultImage();
     } catch (err) {
       fatalErrorText.textContent = err.message || 'Something went wrong. Please try again.';
       showScreen('error');
@@ -334,7 +345,11 @@
   }
 
   const watermarkImagePromise = loadImage('/watermark.png').catch((err) => {
-    console.warn('Watermark could not be preloaded; print/download will skip it.', err);
+    console.warn('Watermark could not be preloaded; exported images will skip it.', err);
+    return null;
+  });
+  const photoFrameImagePromise = loadImage('/photo-frame.png').catch((err) => {
+    console.warn('Photo frame could not be preloaded; exported images will skip it.', err);
     return null;
   });
 
@@ -346,17 +361,39 @@
     return Math.min(canvas.width, canvas.height) * 0.02;
   }
 
-  async function composeWithWatermark(dataUrl) {
+  // Zoom the subject out within the frame so it doesn't run edge-to-edge and
+  // get cut off/overlapped by the photo-frame's decorative border — most
+  // noticeable on full-body shots. Keep in sync with the `transform: scale(...)`
+  // applied to video/#captured-photo/#result-photo in style.css.
+  const PHOTO_ZOOM_OUT_SCALE = 0.72;
+
+  async function composeFinalImage(dataUrl) {
     if (!dataUrl) return null;
     const baseImg = await loadImage(dataUrl);
-    const wm = await watermarkImagePromise;
+    const [frame, wm] = await Promise.all([photoFrameImagePromise, watermarkImagePromise]);
+    const baseWidth = baseImg.naturalWidth || baseImg.width;
+    const baseHeight = baseImg.naturalHeight || baseImg.height;
+    const cropSize = Math.min(baseWidth, baseHeight);
+    const cropX = Math.round((baseWidth - cropSize) / 2);
+    const cropY = Math.round((baseHeight - cropSize) / 2);
 
     const canvas = document.createElement('canvas');
-    canvas.width = baseImg.naturalWidth || baseImg.width;
-    canvas.height = baseImg.naturalHeight || baseImg.height;
+    canvas.width = cropSize;
+    canvas.height = cropSize;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
 
+    // Match the on-screen navy background that shows through the margin left
+    // by the zoomed-out subject.
+    ctx.fillStyle = '#1a1a8c';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const drawSize = Math.round(cropSize * PHOTO_ZOOM_OUT_SCALE);
+    const drawOffset = Math.round((cropSize - drawSize) / 2);
+    ctx.drawImage(baseImg, cropX, cropY, cropSize, cropSize, drawOffset, drawOffset, drawSize, drawSize);
+
+    if (frame) {
+      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    }
     if (wm) {
       const wmW = Math.round(getWatermarkScale(canvas));
       const wmH = Math.round(wmW * (wm.naturalHeight / wm.naturalWidth));
@@ -367,58 +404,123 @@
     return canvas.toDataURL('image/png');
   }
 
-  async function downloadResult() {
-    if (!resultImageDataUrl) return;
-    const composed = await composeWithWatermark(resultImageDataUrl);
+  async function getComposedResultImage() {
+    if (!composedResultImageDataUrl && resultImageDataUrl) {
+      composedResultImageDataUrl = await composeFinalImage(resultImageDataUrl);
+    }
+    return composedResultImageDataUrl;
+  }
+
+  // Kick off the (cheap) canvas compose as soon as we have a result, without
+  // waiting for it. iOS Safari only lets window.print()/navigator.share() run
+  // when they're triggered synchronously from the tap that invoked them, so by
+  // the time the user taps Print/Download the composed image is normally
+  // already cached and the click handlers below can act immediately.
+  function prewarmComposedResultImage() {
+    getComposedResultImage().catch((err) => {
+      console.warn('Failed to prewarm composed result image.', err);
+    });
+  }
+
+  function decodeImage(img) {
+    // HTMLImageElement.prototype.decode isn't available in every browser;
+    // fall back to the load event so this still works everywhere.
+    if (typeof img.decode === 'function') return img.decode();
+    if (img.complete) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      img.addEventListener('load', () => resolve(), { once: true });
+      img.addEventListener('error', () => reject(new Error('Failed to load image.')), { once: true });
+    });
+  }
+
+  function isIos() {
+    return /iP(hone|od|ad)/.test(navigator.userAgent) ||
+      // iPadOS 13+ reports as "MacIntel" but exposes touch support.
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const { mimeType, base64 } = dataUrlToParts(dataUrl);
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mimeType });
+  }
+
+  function triggerAnchorDownload(dataUrl) {
     const a = document.createElement('a');
-    a.href = composed || resultImageDataUrl;
+    a.href = dataUrl;
     a.download = `create-me-${Date.now()}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
   }
 
+  async function downloadResult() {
+    if (!resultImageDataUrl) return;
+    const composed = (await getComposedResultImage()) || resultImageDataUrl;
+
+    // iOS Safari doesn't support forced downloads of data: URLs via the
+    // `download` attribute — it just opens the image instead of saving it.
+    // Prefer the Web Share API (native "Save Image" via the share sheet) when
+    // available, and fall back to opening the image in a new tab so the user
+    // can long-press -> Save Image.
+    if (navigator.canShare && typeof navigator.share === 'function') {
+      try {
+        const filename = `create-me-${Date.now()}.png`;
+        const file = new File([dataUrlToBlob(composed)], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file] });
+          return;
+        }
+      } catch (err) {
+        // AbortError means the user cancelled the share sheet — not an error.
+        if (err && err.name === 'AbortError') return;
+        console.warn('navigator.share failed, falling back.', err);
+      }
+    }
+
+    if (isIos()) {
+      // No reliable forced-download path on iOS Safari without Web Share;
+      // open the image so the user can long-press -> Save Image.
+      window.open(composed, '_blank');
+      return;
+    }
+
+    triggerAnchorDownload(composed);
+  }
+
   async function printResult() {
     if (!resultImageDataUrl) return;
-    const composed = await composeWithWatermark(resultImageDataUrl);
-    if (!composed) {
+
+    // Fast path: composed image already prewarmed, so we can call
+    // window.print() synchronously within the click's user gesture — required
+    // for iOS Safari to actually open the print sheet.
+    if (composedResultImageDataUrl) {
+      printPhoto.src = composedResultImageDataUrl;
       window.print();
       return;
     }
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) {
-      window.print();
-      return;
-    }
-    win.document.open();
-    win.document.write(`<!doctype html><html><head><title>Print</title>
-<style>
-  html, body { margin: 0; height: 100%; background: #fff; }
-  img { display: block; width: 100%; height: 100%; object-fit: contain; }
-  @media print { html, body { margin: 0; } }
-</style>
-</head><body>
-<img id="print-img" src="${composed}" alt="Print">
-<script>
-  (function () {
-    var img = document.getElementById('print-img');
-    function go() { window.focus(); window.print(); }
-    if (img.complete && img.naturalWidth) { go(); }
-    else { img.addEventListener('load', go, { once: true }); }
-    window.addEventListener('afterprint', function () { window.close(); });
-  })();
-</script>
-</body></html>`);
-    win.document.close();
+
+    // Slow path (composed image wasn't ready yet): may not trigger the print
+    // dialog on iOS since the gesture chain is broken by the awaits, but this
+    // should be rare since compose is prewarmed as soon as the result is shown.
+    const composed = await getComposedResultImage();
+    if (!composed) return;
+    printPhoto.src = composed;
+    await decodeImage(printPhoto);
+    window.print();
   }
 
   function startOver() {
     // Clear in-memory state so nothing lingers for the next attendee.
     capturedImageDataUrl = null;
     resultImageDataUrl = null;
+    composedResultImageDataUrl = null;
     setGenerateBusy(false);
     capturedPhoto.src = '';
     resultPhoto.src = '';
+    printPhoto.src = '';
     promptInput.value = '';
     delete promptInput.dataset.speechBase;
     if (recognition && isListening) {
