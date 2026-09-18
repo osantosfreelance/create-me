@@ -287,7 +287,7 @@ textarea:focus { border-color: var(--orange); }
   html, body { margin: 0; padding: 0; height: auto; background: #fff; }
   body > *:not(#app) { display: none; }
   #app > *:not(#screen-result) { display: none; }
-  #app { min-height: 0; padding: 0; }
+  #app { min-height: 0; padding: 0; background: #fff; }
   #screen-result { display: block; width: 100%; max-width: none; padding: 0; box-shadow: none; }
   #screen-result > *:not(.print-target) { display: none; }
   .print-target {
