@@ -32,6 +32,7 @@ html, body {
 /* Session-specific styles for tech-fest-2k26 - compact layout */
 #app[data-session-code="tech-fest-2k26"] .app-header {
   margin-bottom: 0;
+  display: none;
 }
 
 #app[data-session-code="tech-fest-2k26"] .screen {
