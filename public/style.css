@@ -118,6 +118,16 @@ video, #captured-photo, #result-photo {
   transform: scaleX(-1);
 }
 
+/* Session-specific margin-top adjustments */
+#app[data-session-code="tech-fest-2k26"] video,
+#app[data-session-code="tech-fest-2k26"] #captured-photo,
+#app[data-session-code="tech-fest-2k26"] #result-photo,
+#app[data-session-code="ai-experience-2k26"] video,
+#app[data-session-code="ai-experience-2k26"] #captured-photo,
+#app[data-session-code="ai-experience-2k26"] #result-photo {
+  margin-top: 0;
+}
+
 .photo-frame {
   position: absolute;
   inset: 0;
