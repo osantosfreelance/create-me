@@ -76,6 +76,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve static files with no-cache for CSS/JS to ensure updates are fetched
+app.use((req, res, next) => {
+  if (req.path.match(/\.(css|js|html)$/i)) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Rate limiting: /api/generate calls a paid API, so cap it tightly per-IP to
@@ -99,12 +106,53 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// Session code validation. If SESSION_CODE is set, enforce it on protected endpoints.
-const VALID_SESSION = process.env.SESSION_CODE || 'create-me-townhall-2k26';
+// Session code validation. Each valid code maps to an asset index, which selects the
+// branding assets served to the browser (`public/<index>-photo-frame.png` and
+// `public/<index>-watermark.png`). Assets that don't exist are simply skipped client-side.
+const DEFAULT_SESSIONS = {
+  'create-me-townhall-2k26': 1,
+  'tech-fest-2k26': 2,
+  'ai-experience-2k26': 3,
+};
+
+// SESSION_CODES overrides the defaults: a list of `code:index` pairs separated by
+// commas or `|` (the `|` form is handy for tools like gcloud that treat commas as
+// their own delimiter). The index is optional and falls back to the entry's position
+// (1-based). Legacy SESSION_CODE (a single code) is still honoured when SESSION_CODES
+// is unset.
+function buildSessions() {
+  const raw = process.env.SESSION_CODES || process.env.SESSION_CODE;
+  if (!raw || !raw.trim()) return { ...DEFAULT_SESSIONS };
+
+  const sessions = {};
+  raw
+    .split(/[,|]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .forEach((entry, position) => {
+      const sep = entry.lastIndexOf(':');
+      const code = sep === -1 ? entry : entry.slice(0, sep).trim();
+      const rawIndex = sep === -1 ? '' : entry.slice(sep + 1).trim();
+      const parsedIndex = Number.parseInt(rawIndex, 10);
+      if (!code) return;
+      sessions[code] = Number.isInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex : position + 1;
+    });
+
+  return Object.keys(sessions).length ? sessions : { ...DEFAULT_SESSIONS };
+}
+
+const SESSIONS = buildSessions();
+console.log(`session codes configured: ${Object.keys(SESSIONS).length}`);
+
+function resolveSession(req) {
+  const sessionCode = req.get('x-session-code') || (req.body && req.body.sessionCode);
+  const assetIndex = sessionCode ? SESSIONS[sessionCode] : undefined;
+  return { sessionCode, valid: assetIndex !== undefined, assetIndex };
+}
 
 function sessionCodeMiddleware(req, res, next) {
-  const sessionCode = req.get('x-session-code') || (req.body && req.body.sessionCode);
-  if (sessionCode !== VALID_SESSION) {
+  const { valid, sessionCode } = resolveSession(req);
+  if (!valid) {
     console.warn(`[${req.requestId}] session-code validation failed: received "${sessionCode || 'none'}"`);
     return res.status(401).json({ error: 'Invalid or missing session code.' });
   }
@@ -113,12 +161,12 @@ function sessionCodeMiddleware(req, res, next) {
 
 // Validation endpoint for early feedback on session code
 app.post('/api/validate-session', (req, res) => {
-  const sessionCode = req.get('x-session-code') || (req.body && req.body.sessionCode);
-  if (sessionCode !== VALID_SESSION) {
+  const { valid, sessionCode, assetIndex } = resolveSession(req);
+  if (!valid) {
     console.warn(`[${req.requestId}] session-code validation failed: received "${sessionCode || 'none'}"`);
     return res.status(401).json({ error: 'Invalid or missing session code.' });
   }
-  res.json({ ok: true });
+  res.json({ ok: true, assetIndex });
 });
 
 app.post('/api/generate', generateLimiter, sessionCodeMiddleware, async (req, res) => {
