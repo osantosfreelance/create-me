@@ -181,6 +181,7 @@
 
       // Valid session code — proceed to camera
       currentSessionCode = code;
+      document.getElementById('app').setAttribute('data-session-code', code);
       applySessionAssets(data.assetIndex);
       sessionCodeError.hidden = true;
       sessionCodeInput.value = '';
