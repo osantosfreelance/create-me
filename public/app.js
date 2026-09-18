@@ -22,6 +22,7 @@
   const sessionCodeError = document.getElementById('session-code-error');
 
   let currentSessionCode = null;
+  let sessionAssetIndex = null;
 
   const video = document.getElementById('video');
   const cameraError = document.getElementById('camera-error');
@@ -180,6 +181,7 @@
 
       // Valid session code — proceed to camera
       currentSessionCode = code;
+      applySessionAssets(data.assetIndex);
       sessionCodeError.hidden = true;
       sessionCodeInput.value = '';
       showScreen('camera');
@@ -344,14 +346,51 @@
     });
   }
 
-  const watermarkImagePromise = loadImage('/watermark.png').catch((err) => {
-    console.warn('Watermark could not be preloaded; exported images will skip it.', err);
-    return null;
-  });
-  const photoFrameImagePromise = loadImage('/photo-frame.png').catch((err) => {
-    console.warn('Photo frame could not be preloaded; exported images will skip it.', err);
-    return null;
-  });
+  // Branding assets are per-session: each session code maps to an asset index and the
+  // matching `/<index>-photo-frame.png` / `/<index>-watermark.png` files. Sessions
+  // without artwork yet simply render (and export) without frame/watermark.
+  let watermarkImagePromise = Promise.resolve(null);
+  let photoFrameImagePromise = Promise.resolve(null);
+
+  function sessionAssetUrl(name) {
+    return sessionAssetIndex ? `/${sessionAssetIndex}-${name}.png` : null;
+  }
+
+  function applySessionAssets(assetIndex) {
+    const index = Number.parseInt(assetIndex, 10);
+    sessionAssetIndex = Number.isInteger(index) && index > 0 ? index : null;
+
+    document.querySelectorAll('[data-session-asset]').forEach((img) => {
+      const url = sessionAssetUrl(img.dataset.sessionAsset);
+      img.hidden = true;
+      if (!url) {
+        img.removeAttribute('src');
+        return;
+      }
+      img.onload = () => {
+        img.hidden = false;
+      };
+      img.onerror = () => {
+        img.hidden = true;
+      };
+      img.src = url;
+    });
+
+    const frameUrl = sessionAssetUrl('photo-frame');
+    const watermarkUrl = sessionAssetUrl('watermark');
+    photoFrameImagePromise = frameUrl
+      ? loadImage(frameUrl).catch((err) => {
+          console.warn('Photo frame could not be preloaded; exported images will skip it.', err);
+          return null;
+        })
+      : Promise.resolve(null);
+    watermarkImagePromise = watermarkUrl
+      ? loadImage(watermarkUrl).catch((err) => {
+          console.warn('Watermark could not be preloaded; exported images will skip it.', err);
+          return null;
+        })
+      : Promise.resolve(null);
+  }
 
   function getWatermarkScale(canvas) {
     return Math.min(canvas.width, canvas.height) * 0.18;
@@ -386,9 +425,9 @@
     canvas.height = cropSize;
     const ctx = canvas.getContext('2d');
 
-    // Match the on-screen navy background that shows through the margin left
+    // Match the on-screen white background that shows through the margin left
     // by the zoomed-out subject.
-    ctx.fillStyle = '#1a1a8c';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const drawSize = Math.round(cropSize * PHOTO_ZOOM_SCALE);
