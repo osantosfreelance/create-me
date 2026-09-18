@@ -31,11 +31,21 @@ html, body {
 
 /* Session-specific styles for tech-fest-2k26 - compact layout */
 #app[data-session-code="tech-fest-2k26"] .app-header {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
+}
+
+#app[data-session-code="tech-fest-2k26"] .app-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+#app[data-session-code="tech-fest-2k26"] .tagline {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
 }
 
 #app[data-session-code="tech-fest-2k26"] .screen {
-  padding-top: 12px;
+  padding-top: 8px;
   max-width: 90%;
 }
 
