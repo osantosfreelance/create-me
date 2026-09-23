@@ -8,5 +8,5 @@ services:
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - HOST_IP=${HOST_IP:-}
-      - SESSION_CODE=${SESSION_CODE:-create-me-townhall-2k26}
+      - SESSION_CODES=${SESSION_CODES:-townhall-2k26:1,tech-fest-2k26:2,ai-experience-2k26:3}
     restart: unless-stopped

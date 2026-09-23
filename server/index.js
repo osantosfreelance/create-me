@@ -110,7 +110,7 @@ app.use(globalLimiter);
 // branding assets served to the browser (`public/<index>-photo-frame.png` and
 // `public/<index>-watermark.png`). Assets that don't exist are simply skipped client-side.
 const DEFAULT_SESSIONS = {
-  'create-me-townhall-2k26': 1,
+  'townhall-2k26': 1,
   'tech-fest-2k26': 2,
   'ai-experience-2k26': 3,
 };

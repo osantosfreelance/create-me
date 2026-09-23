@@ -55,30 +55,46 @@ their photo — which they can download or print on the spot.
 To reset between events, just stop and restart the container — there is no
 persisted state to clean up.
 
-## Session Code (Access Control)
+## Session Codes (Access Control & Branding)
 
-By default, the app runs without session code validation. To require a session
-code before attendees can generate images, set the `SESSION_CODE` environment
-variable:
+The app ships with three session codes, each mapped to its own branding assets:
+
+| Session code | Assets |
+| --- | --- |
+| `townhall-2k26` | `public/1-photo-frame.png`, `public/1-watermark.png` |
+| `tech-fest-2k26` | `public/2-photo-frame.png`, `public/2-watermark.png` |
+| `ai-experience-2k26` | `public/3-photo-frame.png`, `public/3-watermark.png` |
+
+After a code is accepted, the browser loads `/<index>-photo-frame.png` and
+`/<index>-watermark.png`. **If a file doesn't exist, it is simply skipped** — on
+screen and in downloaded/printed images. Drop the artwork into `public/` with the
+matching filename to enable it; no code change is needed.
+
+To override the codes, set `SESSION_CODES` to a comma-separated list of
+`code:index` pairs (the index is optional and defaults to the entry's position):
 
 ```powershell
-docker run -p 3000:3000 -e GEMINI_API_KEY=YOUR_KEY -e SESSION_CODE=myevent2k26 create-me
+docker run -p 3000:3000 -e GEMINI_API_KEY=YOUR_KEY -e SESSION_CODES=myevent2k26:1 create-me
 ```
 
 Or with docker-compose, add to your `.env`:
 ```
-SESSION_CODE=myevent2k26
+SESSION_CODES=myevent2k26:1,otherevent2k26:2
 ```
 
-When a session code is configured:
+Entries may also be separated with `|` instead of `,` (useful for tools like
+`gcloud --set-env-vars`, which treat commas as their own delimiter).
+
+The legacy single-code `SESSION_CODE` variable is still honoured when
+`SESSION_CODES` is not set.
+
+Session code behaviour:
 - The app displays a login screen on first load
-- Users must enter the session code to proceed
-- The code is stored in the browser's session (cleared when browser is closed)
+- Users must enter a valid session code to proceed
+- The code is kept in memory for the browser session only
 - All API calls are validated server-side
 
 This is useful for:
 - Preventing remote abuse (rate-limiting API costs)
 - Multiple events using the same booth laptop
 - Sharing a deployment among several teams
-
-Default session code: `create-me-townhall-2k26`
