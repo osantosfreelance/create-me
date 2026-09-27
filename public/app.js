@@ -411,6 +411,17 @@
   const PHOTO_ZOOM_SCALE = 0.75;
   const PHOTO_ZOOM_MARGIN_TOP = 0.06;
 
+  // Some sessions override margin-top to 0 in style.css (see the
+  // "Session-specific margin-top adjustments" rule) because their
+  // photo-frame's transparent window is vertically centered. Exported/printed
+  // images must use the same override, otherwise the subject is composed
+  // lower than the preview and pokes out past the frame artwork's edges.
+  const ZERO_MARGIN_TOP_SESSION_CODES = new Set(['tech-fest-2k26', 'ai-experience-2k26']);
+
+  function getPhotoZoomMarginTop() {
+    return ZERO_MARGIN_TOP_SESSION_CODES.has(currentSessionCode) ? 0 : PHOTO_ZOOM_MARGIN_TOP;
+  }
+
   async function composeFinalImage(dataUrl) {
     if (!dataUrl) return null;
     const baseImg = await loadImage(dataUrl);
@@ -433,7 +444,7 @@
 
     const drawSize = Math.round(cropSize * PHOTO_ZOOM_SCALE);
     const drawOffsetX = Math.round((cropSize - drawSize) / 2);
-    const drawOffsetY = Math.round((cropSize - drawSize) / 2 + cropSize * PHOTO_ZOOM_MARGIN_TOP);
+    const drawOffsetY = Math.round((cropSize - drawSize) / 2 + cropSize * getPhotoZoomMarginTop());
     ctx.drawImage(baseImg, cropX, cropY, cropSize, cropSize, drawOffsetX, drawOffsetY, drawSize, drawSize);
 
     if (frame) {
