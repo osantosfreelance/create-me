@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CREATE ME — Operator Portal</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/portal.css" />
+</head>
+<body>
+  <main id="portal-app">
+
+    <!-- Screen 0: Session Code Login -->
+    <section id="screen-session-code" class="screen active">
+      <header class="app-header">
+        <h1>CREATE ME</h1>
+        <p class="tagline">Operator Portal — enter your session code.</p>
+      </header>
+      <div class="session-code-form">
+        <input id="session-code-input" type="password" placeholder="Session Code" maxlength="100" />
+        <button id="btn-session-code-submit" class="btn btn-primary">Enter</button>
+      </div>
+      <p id="session-code-error" class="error-text" hidden></p>
+    </section>
+
+    <!-- Screen 1: Saved photos grid -->
+    <section id="screen-gallery" class="screen">
+      <header class="app-header">
+        <h1>Saved Photos</h1>
+        <p class="tagline">
+          Only the most recently saved photos are kept (a fixed, small in-memory buffer).
+          Once that limit is reached, the oldest saved photo is overwritten — download prints
+          promptly.
+        </p>
+      </header>
+      <div class="controls" style="margin-bottom: 16px;">
+        <button id="btn-refresh" class="btn btn-secondary">Refresh</button>
+      </div>
+      <p id="gallery-error" class="error-text" hidden></p>
+      <p id="gallery-empty" class="tagline" hidden>No saved photos yet.</p>
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </section>
+
+  </main>
+  <script src="/portal.js"></script>
+</body>
+</html>

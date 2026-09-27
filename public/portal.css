@@ -1,0 +1,44 @@
+/* Styles specific to the printer-operator portal (public/portal.html).
+   Loaded alongside the main style.css so it shares the same design tokens
+   (--orange, --navy, .screen/.btn/etc.) defined there. */
+
+#portal-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 16px;
+  background: var(--orange);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--off-white);
+  border-radius: 12px;
+  padding: 10px;
+  text-decoration: none;
+}
+
+.gallery-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.gallery-item .gallery-item-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}

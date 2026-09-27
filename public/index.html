@@ -86,9 +86,12 @@
       </div>
       <div class="controls">
         <button id="btn-start-over" class="btn btn-secondary">Start Over</button>
+        <button id="btn-regenerate" class="btn btn-secondary">Regenerate</button>
+        <button id="btn-save" class="btn btn-secondary">Save</button>
         <button id="btn-download" class="btn btn-secondary">Download</button>
         <button id="btn-print" class="btn btn-primary">Print</button>
       </div>
+      <p id="save-error" class="error-text" hidden></p>
     </section>
 
     <!-- Screen 5: Error -->
@@ -98,11 +101,26 @@
       </header>
       <p class="error-text" id="fatal-error-text">Something went wrong.</p>
       <div class="controls">
-        <button id="btn-error-retry" class="btn btn-primary">Try Again</button>
+        <button id="btn-error-back" class="btn btn-primary">Back to Edit</button>
+        <button id="btn-error-start-over" class="btn btn-secondary">Start Over</button>
       </div>
     </section>
   </main>
 
+  <!-- Save confirmation modal: shows a QR code linking to the saved photo -->
+  <div id="save-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <h2>Photo Saved</h2>
+      <p>Scan this code to view or download the photo.</p>
+      <div id="save-qr" class="save-qr"></div>
+      <p id="save-link" class="save-link"></p>
+      <div class="controls">
+        <button id="btn-save-modal-close" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/qrcode.js"></script>
   <script src="/app.js"></script>
   <footer class="app-footer">&copy; powered by osantosfreelance</footer>
 </body>

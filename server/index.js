@@ -3,11 +3,14 @@
 /**
  * create-me — townhall photo booth server.
  *
- * Privacy design: this server is intentionally stateless.
- *  - No database, no filesystem writes of any photo or generated image.
+ * Privacy design: this server is intentionally stateless by default.
+ *  - No database; nothing is written to disk or a bucket, ever.
  *  - Request bodies (which contain image bytes) are never logged.
  *  - The Gemini API key lives only in process env and is never sent to the browser.
- *  - Images pass through memory for the lifetime of a single request only.
+ *  - Images pass through memory for the lifetime of a single request only,
+ *    UNLESS an attendee explicitly taps "Save" — that photo is then kept in
+ *    a small in-memory ring buffer (max 5, oldest overwritten first; see
+ *    server/storage.js) until an operator downloads it or the process restarts.
  */
 
 const express = require('express');
@@ -20,6 +23,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { generateImage } = require('./gemini');
 const { validatePrompt, validateImage } = require('./guardrails');
+const { savePhoto, findPhoto, listPhotosForSession, UUID_PATTERN } = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -220,6 +224,74 @@ app.post('/api/generate', generateLimiter, sessionCodeMiddleware, async (req, re
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, configured: Boolean(process.env.GEMINI_API_KEY) });
+});
+
+// Saving a photo is opt-in (attendee taps "Save") and rate-limited like
+// /api/generate to bound memory usage from scripted abuse. Storage itself is
+// a fixed-size in-memory ring buffer (see server/storage.js) capped at
+// MAX_PHOTOS, so at most a handful of photos are ever held at once.
+const saveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment and try again.' },
+});
+
+app.post('/api/photos', saveLimiter, sessionCodeMiddleware, async (req, res) => {
+  try {
+    const { imageBase64, mimeType } = req.body || {};
+    const { sessionCode } = resolveSession(req);
+
+    const imageCheck = validateImage(mimeType, imageBase64);
+    if (!imageCheck.ok) {
+      console.warn(`[${req.requestId}] save:reject image validation failed: ${imageCheck.error}`);
+      return res.status(400).json({ error: imageCheck.error });
+    }
+
+    const { id } = await savePhoto({ imageBase64, mimeType: mimeType.toLowerCase(), sessionCode });
+    const host = req.get('host');
+    const url = `${req.protocol}://${host}/${id}`;
+    console.log(`[${req.requestId}] save:success id=${id}`);
+    res.json({ id, url });
+  } catch (err) {
+    console.error(`[${req.requestId}] save:failed`, err.message);
+    res.status(500).json({ error: 'Could not save photo. Please try again.' });
+  }
+});
+
+// Operator portal: lists saved photos for the caller's session code.
+app.get('/api/photos', sessionCodeMiddleware, async (req, res) => {
+  try {
+    const { sessionCode } = resolveSession(req);
+    const photos = await listPhotosForSession(sessionCode);
+    res.json({ photos });
+  } catch (err) {
+    console.error(`[${req.requestId}] list-photos:failed`, err.message);
+    res.status(500).json({ error: 'Could not load saved photos.' });
+  }
+});
+
+// QR/link target: serves a saved photo's raw image bytes directly (no HTML
+// viewer page). Constrained to a strict UUID pattern and placed after the
+// static/API routes above so it can never shadow them. Express wraps this
+// pattern inside its own capture group, so the anchors (^...$) from
+// UUID_PATTERN must be stripped here or the route never matches.
+const UUID_ROUTE_PATTERN = UUID_PATTERN.source.replace(/^\^/, '').replace(/\$$/, '');
+app.get(`/:uuid(${UUID_ROUTE_PATTERN})`, async (req, res) => {
+  try {
+    const photo = await findPhoto(req.params.uuid);
+    if (!photo) {
+      return res.status(404).send('Photo not found.');
+    }
+    // No caching: these photos can be overwritten (FIFO eviction) as soon
+    // as newer ones are saved, so a stale cached copy would be misleading.
+    res.set('Cache-Control', 'no-store');
+    res.type(photo.mimeType).send(photo.buffer);
+  } catch (err) {
+    console.error(`[${req.requestId}] photo-fetch:failed`, err.message);
+    res.status(500).send('Could not load photo.');
+  }
 });
 
 const certPath = path.join(__dirname, 'cert.pem');

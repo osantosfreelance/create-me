@@ -11,10 +11,13 @@ their photo — which they can download or print on the spot.
 - **Runs on:** a single booth laptop, packaged as one Docker container. No
   cloud hosting, no AWS — the only outbound network call is to Google's
   Gemini API, so the laptop needs internet access.
-- **Privacy:** nothing is stored. No database, no files written to disk, no
-  logging of image bytes or prompts. Photos and results exist only in memory
-  for the duration of a request / browser tab, and are cleared on "Start
-  Over" or after 90 seconds of inactivity.
+- **Privacy:** by default nothing is stored — no database, no files written
+  to disk, no logging of image bytes or prompts. Photos and results exist
+  only in memory for the duration of a request / browser tab, and are
+  cleared on "Start Over" or after 90 seconds of inactivity. The one
+  exception is the opt-in **Save** button (see below), which keeps a small,
+  fixed number of photos in server memory so they can be downloaded/printed
+  later via a QR code.
 
 ## Requirements
 
@@ -53,7 +56,34 @@ their photo — which they can download or print on the spot.
 5. Grant camera permission when prompted (first launch only).
 
 To reset between events, just stop and restart the container — there is no
-persisted state to clean up.
+persisted state to clean up (saved photos, if any, live only in memory and
+are gone the moment the container restarts).
+
+## Saving Photos & the Operator Portal
+
+On the result screen, attendees can tap **Save** to keep a copy on the
+server and get a QR code (and link) they can scan to download it later —
+handy if they want it on their phone instead of just printing it.
+
+- Saved photos live **only in server memory** — nothing is written to disk
+  or to a cloud bucket. The server keeps a fixed-size buffer of at most
+  **5 saved photos at a time**, shared across the whole running instance.
+  Once a 6th photo is saved, the oldest one is silently overwritten and its
+  QR code/link stops working (404).
+- There is no expiry timer — the only "cleanup" is that 5-photo rollover,
+  and restarting/redeploying the container clears everything.
+- Tell attendees to download promptly if they want to keep their saved
+  photo, since it can be bumped by later saves from other attendees.
+- Operators can view currently-saved photos (for their session code) at
+  `/portal.html` — it's gated behind the same session code used at the
+  kiosk, and links each thumbnail to its full-size image for downloading
+  or printing.
+
+This design is intentionally simple for a single small event on one
+instance: if you run multiple autoscaled instances (e.g. Cloud Run with
+`min-instances` > 1), each instance has its own independent 5-photo buffer,
+so the portal on one instance won't show photos saved via another. For a
+single booth laptop or a single Cloud Run instance this isn't an issue.
 
 ## Session Codes (Access Control & Branding)
 

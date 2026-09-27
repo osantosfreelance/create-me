@@ -40,11 +40,20 @@
   const resultPhoto = document.getElementById('result-photo');
   const printPhoto = document.getElementById('print-photo');
   const btnStartOver = document.getElementById('btn-start-over');
+  const btnRegenerate = document.getElementById('btn-regenerate');
+  const btnSave = document.getElementById('btn-save');
+  const saveError = document.getElementById('save-error');
   const btnDownload = document.getElementById('btn-download');
   const btnPrint = document.getElementById('btn-print');
 
+  const saveModal = document.getElementById('save-modal');
+  const saveQr = document.getElementById('save-qr');
+  const saveLink = document.getElementById('save-link');
+  const btnSaveModalClose = document.getElementById('btn-save-modal-close');
+
   const fatalErrorText = document.getElementById('fatal-error-text');
-  const btnErrorRetry = document.getElementById('btn-error-retry');
+  const btnErrorBack = document.getElementById('btn-error-back');
+  const btnErrorStartOver = document.getElementById('btn-error-start-over');
 
   let mediaStream = null;
   // In-memory only — never persisted to disk/localStorage.
@@ -583,17 +592,78 @@
       recognition.stop();
     }
     updatePromptCount();
+    hideSaveModal();
+    saveError.hidden = true;
     showScreen('camera');
     if (!mediaStream) startCamera();
+  }
+
+  // Used by both "Back to Edit" (generation failure) and "Regenerate"
+  // (unsatisfying result): returns to the prompt screen with the same
+  // captured photo and the last-used prompt still populated and editable,
+  // instead of forcing a full retake.
+  function backToPromptScreen() {
+    setGenerateBusy(false);
+    promptError.hidden = true;
+    capturedPhoto.src = capturedImageDataUrl || '';
+    showScreen('prompt');
+  }
+
+  async function saveResult() {
+    if (!resultImageDataUrl || !currentSessionCode) return;
+    btnSave.disabled = true;
+    saveError.hidden = true;
+    try {
+      const composed = (await getComposedResultImage()) || resultImageDataUrl;
+      const { mimeType, base64 } = dataUrlToParts(composed);
+      const res = await fetch('/api/photos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Code': currentSessionCode || '',
+        },
+        body: JSON.stringify({ imageBase64: base64, mimeType, sessionCode: currentSessionCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not save photo.');
+      }
+      showSaveModal(data.url);
+    } catch (err) {
+      saveError.textContent = err.message || 'Could not save photo. Please try again.';
+      saveError.hidden = false;
+    } finally {
+      btnSave.disabled = false;
+    }
+  }
+
+  function showSaveModal(url) {
+    saveQr.innerHTML = '';
+    if (window.qrcode) {
+      const qr = window.qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      saveQr.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 4 });
+    }
+    saveLink.textContent = url;
+    saveModal.hidden = false;
+  }
+
+  function hideSaveModal() {
+    saveModal.hidden = true;
   }
 
   btnTakePhoto.addEventListener('click', takePhoto);
   btnRetake.addEventListener('click', () => showScreen('camera'));
   btnGenerate.addEventListener('click', generate);
   btnStartOver.addEventListener('click', startOver);
+  btnRegenerate.addEventListener('click', backToPromptScreen);
+  btnSave.addEventListener('click', saveResult);
   btnDownload.addEventListener('click', downloadResult);
   btnPrint.addEventListener('click', printResult);
-  btnErrorRetry.addEventListener('click', startOver);
+  btnErrorBack.addEventListener('click', backToPromptScreen);
+  btnErrorStartOver.addEventListener('click', startOver);
+  btnSaveModalClose.addEventListener('click', hideSaveModal);
 
   window.addEventListener('beforeunload', stopCamera);
 
